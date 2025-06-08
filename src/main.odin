@@ -58,6 +58,4 @@ main :: proc() {
     }
     
     process := procfs.open_process(config.pid)
-
-    
 }
