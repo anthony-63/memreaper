@@ -96,11 +96,10 @@ read_procfs_maps :: proc(pid: Pid) -> [dynamic]Procfs_Map_Entry {
             continue
         }
 
-        entry, ok := parse_map_line(line)
-        if !ok {
-            fmt.eprintln(color.red("Failed to parse map entry, skipping...\n"), "\bline: ", color.blue(line))
-        } else {
+        if entry, ok := parse_map_line(line); ok {
             append(&maps, entry)
+        } else {
+            fmt.eprintln(color.red("Failed to parse map entry, skipping...\n"), "\bline: ", color.blue(line))
         }
     }
 
