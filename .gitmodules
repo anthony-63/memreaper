@@ -1,0 +1,3 @@
+[submodule "external/odin-color"]
+	path = external/odin-color
+	url = https://github.com/hrszpuk/odin-color.git
