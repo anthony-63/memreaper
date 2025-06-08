@@ -8,7 +8,7 @@ Process :: struct {
 }
 
 open_process :: proc(pid: Pid) -> Process {
-   return Process{
+   return Process {
       pid = pid,
       maps = read_procfs_maps(pid)[:]
    }

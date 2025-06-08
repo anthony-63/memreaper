@@ -4,6 +4,7 @@ import "core:fmt"
 import "core:os"
 import "core:strings"
 import "core:strconv"
+import "core:bufio"
 import color "../../external/odin-color"
 
 Map_Permission :: enum {
@@ -104,18 +105,24 @@ parse_map_line :: proc(line: string) -> (Map_Entry, bool) {
 read_procfs_maps :: proc(pid: Pid) -> [dynamic]Map_Entry {
     maps: [dynamic]Map_Entry
 
-    maps_bytes, success := os.read_entire_file_from_filename(fmt.tprintf("/proc/%d/maps", pid))
-    if !success {
-        fmt.eprintln(color.red("Failed to read processes map file with pid"), color.magenta(fmt.tprint(pid)))
+    maps_file, err := os.open(fmt.tprintf("/proc/%d/maps", pid))
+    if err != nil {
+        fmt.eprintln(color.red("Failed to open maps file with error: "), err)
     }
-    
-    maps_str, _ := strings.clone_from_bytes(maps_bytes)
-    map_entries, _ := strings.split_lines(maps_str)
+    defer os.close(maps_file)
 
-    for line in map_entries {
-        if line == "" {
+    scanner: bufio.Scanner
+
+    bufio.scanner_init(&scanner, os.stream_from_handle(maps_file))
+    defer bufio.scanner_destroy(&scanner)
+
+    for bufio.scanner_scan(&scanner) {
+        line := bufio.scanner_text(&scanner)
+
+        if len(strings.trim_space(line)) == 0 {
             continue
         }
+
         entry, ok := parse_map_line(line)
         if !ok {
             fmt.eprintln(color.red("Failed to parse map entry, skipping...\n"), "\bline: ", color.blue(line))
