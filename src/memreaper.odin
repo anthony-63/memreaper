@@ -139,7 +139,6 @@ scan_value_from_scan_value :: proc(t: Scan_Value, v: string) -> (val: Scan_Value
         case f64: return Scan_Value(f64(strconv.parse_f64(v) or_return)), true
         case string: return Scan_Value(v), true
         case []u8: fmt.eprintfln("%s%s", color.dim(color.red("No bytes support yet: ")), color.red(fmt.tprint(t)))
-        // case "bytes": return Scan_Value(v), true
         case: fmt.eprintfln("%s%s", color.dim(color.red("Failed to parse type: ")), color.red(fmt.tprint(t)))
     }
 
