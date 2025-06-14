@@ -64,7 +64,9 @@ main :: proc() {
 
     cmds := []Command(MemReaper){
         cmd("init", "", cmd_init),
+        cmd("maps", "display memory maps in the current program", cmd_maps),
         cmd("scan", "scan for value, usage: scan <type> <value>, ex. scan i32 12, scan bytes \"3a 53 2a\"", cmd_scan),
+        cmd("next", "rescan and filter results, usage: next condition <value>, ex. next exact 12, next increased", cmd_next),
         cmd("help", "show this message", cmd_help),
         cmd("quit", "quit memreaper", cmd_quit),
     }

@@ -79,6 +79,10 @@ dim :: proc(input: string) -> string {
     return fmt.aprintf("%s%s%s", DIM, input, DIM_RESET)
 }
 
+bold :: proc(input: string) -> string {
+    return fmt.aprintf("%s%s%s", BOLD, input, BOLD_RESET)
+}
+
 red :: proc(input: string) -> string {
     return color(RED, input)
 }

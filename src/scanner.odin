@@ -7,6 +7,7 @@ import "core:slice"
 import "core:strings"
 import "core:strconv"
 
+import "color"
 import "procfs"
 
 foreign import libc "system:c"
@@ -26,24 +27,6 @@ PTRACE_ATTACH :: 16
 PTRACE_DETACH :: 17
 PTRACE_PEEKDATA :: 2
 PTRACE_POKEDATA :: 5
-
-Map_Permission :: enum u8 {
-    READ    = 0,
-    WRITE   = 1,
-    EXECUTE = 2,
-}
-Map_Permissions :: bit_set[Map_Permission]
-
-Proc_Map :: struct {
-    start:       u64,
-    end:         u64,
-    permissions: Map_Permissions,
-    pathname:    string,
-}
-
-Proc_Maps :: struct {
-    maps: []Proc_Map,
-}
 
 Scan_Value :: union {
     i32,
@@ -180,6 +163,10 @@ scanner_scan :: proc(scanner: ^Memory_Scanner, maps: []procfs.Procfs_Map_Entry, 
         if .Read not_in map_.permissions do continue
         if strings.contains(map_.pathname, "[vdso]") || strings.contains(map_.pathname, "[vsyscall]") {
             continue
+        }
+
+        if map_.pathname != "" && map_.pathname[0] != 0 {
+            fmt.print(color.dim("\x1b[2KScanning memory region:"), format_module(map_.pathname, map_.permissions), "\r")
         }
         
         scan_region(scanner, map_.start, map_.end, target) or_continue
