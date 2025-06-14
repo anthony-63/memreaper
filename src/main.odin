@@ -5,6 +5,8 @@ import "core:os"
 import "core:strconv"
 import "core:strings"
 
+import "color"
+
 import procfs "procfs"
 
 Config :: struct {
@@ -62,13 +64,22 @@ main :: proc() {
 
     cmds := []Command(MemReaper){
         cmd("init", "", cmd_init),
-        cmd("quit", "quit memreaper", cmd_quit),
+        cmd("scan", "scan for value, usage: scan <type> <value>, ex. scan i32 12, scan bytes \"3a 53 2a\"", cmd_scan),
         cmd("help", "show this message", cmd_help),
+        cmd("quit", "quit memreaper", cmd_quit),
     }
+
+    scanner, err := scanner_create(process.pid)
+    if err != .NONE {
+        fmt.eprintln(color.red("Failed to create memory scanner"), color.bright_magenta(fmt.tprint(err)))
+        return
+    }
+    defer scanner_destroy(scanner)
 
     reaper := MemReaper {
         handle = process,
         commands = cmds,
+        scanner = scanner,
     }
 
     run_cli(cmds, &reaper)
