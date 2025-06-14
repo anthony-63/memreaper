@@ -5,7 +5,7 @@ import "core:os"
 import "core:strings"
 import "core:strconv"
 import "core:bufio"
-import color "../../external/odin-color"
+import "../color"
 
 Procfs_Map_Permission :: enum {
     Read,

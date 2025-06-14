@@ -51,6 +51,7 @@ parse_args :: proc() -> (Config, bool) {
     return Config{pid = pid}, true
 }
 
+
 main :: proc() {
     config, ok := parse_args()
     if !ok {
@@ -58,4 +59,17 @@ main :: proc() {
     }
     
     process := procfs.open_process(config.pid)
+
+    cmds := []Command(MemReaper){
+        cmd("init", "", cmd_init),
+        cmd("quit", "quit memreaper", cmd_quit),
+        cmd("help", "show this message", cmd_help),
+    }
+
+    reaper := MemReaper {
+        handle = process,
+        commands = cmds,
+    }
+
+    run_cli(cmds, &reaper)
 }

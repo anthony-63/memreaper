@@ -6,7 +6,7 @@ import "core:strings"
 import "core:strconv"
 import "core:bufio"
 import "core:slice"
-import color "../../external/odin-color"
+import "../color"
 
 Procfs_Status :: struct {
     name: string,

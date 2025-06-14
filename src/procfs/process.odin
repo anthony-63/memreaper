@@ -16,6 +16,11 @@ open_process :: proc(pid: Pid) -> Process {
    }
 }
 
+refresh_process :: proc(process: ^Process) {
+   process.maps = read_procfs_maps(process.pid)[:]
+   process.status = read_procfs_status(process.pid) or_else Procfs_Status{}
+}
+
 delete_process :: proc(process: ^Process) {
    delete_procfs_status(&process.status)
    delete_procfs_maps(process.maps)
