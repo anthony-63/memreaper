@@ -77,6 +77,7 @@ export type status_t = struct {
 
 type group_error = !void;
 type cmdline_error = !void;
+type pair_error = !void;
 
 fn parse_status_group_line(line: str) ([]uint | group_error) = {
     let groups: []uint = [];
@@ -132,273 +133,269 @@ fn parse_status_cmdline(pid: pid_t) (str | cmdline_error) = {
     return cmdline;
 };
 
-fn parse_status_line(line: str, status: *status_t) bool = {
-	if (strings::trim(line) == "") return true;
+fn parse_status_line(line: str, status: *status_t) (void | pair_error) = {
+	if (strings::trim(line) == "") return;
 
 	let parts = match(strings::split(line, ":")) {
 		case let val: []str => yield val;
-		case => return false;
+		case => return pair_error;
 	};
-	if (len(parts) < 2) return true;
+	if (len(parts) < 2) return;
 
 	let key = parts[0];
 	let val = strings::trim(parts[1]);
 
-	switch (key) {
-	case "Name" =>
-		status.name = strings::dup(val) as str;
-	case "Umask" =>
-		status.umask = strconv::stou(val, 8) as uint;
-	case "State" =>
-		status.state = if (len(val) > 0) strings::toutf8(val)[0] else 0;
-	case "Tgid" =>
-		status.tgid = match (strconv::stoi(val)) {
-            case let i: int => yield i;
-            case => yield 0;
-        };
-	case "Ngid" =>
-		status.ngid = match (strconv::stoi(val)) {
-            case let i: int => yield i;
-            case => yield 0;
-        };
-	case "Pid" =>
-		status.pid = match (strconv::stoi(val)) {
-            case let i: int => yield i;
-            case => yield 0;
-        };
-	case "PPid" =>
-		status.ppid = match (strconv::stoi(val)) {
-            case let i: int => yield i;
-            case => yield 0;
-        };
-	case "TracerPid" =>
-		status.tracer_pid = match (strconv::stoi(val)) {
-            case let i: int => yield i;
-            case => yield 0;
-        };
-	case "Uid" =>
-		let uids = match(strings::split(val, " ")) {
-            case let s: []str => yield s;
-            case => return false;
-        };
-		if (len(uids) >= 4) {
-			status.uid_real = strconv::stou(uids[0]) as uint;
-			status.uid_effective = strconv::stou(uids[1]) as uint;
-			status.uid_saved = strconv::stou(uids[2]) as uint;
-			status.uid_fs = strconv::stou(uids[3]) as uint;
-		};
-	case "Gid" =>
-		let gids = match(strings::split(val, " ")) {
-            case let s: []str => yield s;
-            case => return false;
-        };
-		if (len(gids) >= 4) {
-			status.gid_real = strconv::stou(gids[0]) as uint;
-			status.gid_effective = strconv::stou(gids[1]) as uint;
-			status.gid_saved = strconv::stou(gids[2]) as uint;
-			status.gid_fs = strconv::stou(gids[3]) as uint;
-		};
-	case "FDSize" =>
-		status.fd_size = match(strconv::stoi(val)) {
-            case let i: int => yield i;
-            case => yield 0;
-        };
-	case "Groups" =>
-		status.groups = match(parse_status_group_line(val)) {
-            case let groups: []uint => yield groups;
-            case => {
-                const _p = fmt::println("Malformed status file(groups)");
-                return false;
-            };
-        };
-	case "VmPeak" =>
-		status.vm_peak = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "VmSize" =>
-		status.vm_size = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "VmLck" =>
-		status.vm_lck = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "VmPin" =>
-		status.vm_pin = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "VmHWM" =>
-		status.vm_hwm = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "VmRSS" =>
-		status.vm_rss = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "RssAnon" =>
-		status.rss_anon = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "RssFile" =>
-		status.rss_file = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "RssShmem" =>
-		status.rss_shmem = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "VmData" =>
-		status.vm_data = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "VmStk" =>
-		status.vm_stk = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "VmExe" =>
-		status.vm_exe = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "VmLib" =>
-		status.vm_lib = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "VmPTE" =>
-		status.vm_pte = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "VmSwap" =>
-		status.vm_swap = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "HugetlbPages" =>
-		status.hugetlb_pages = match (strconv::stoz(val)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "Threads" =>
-		status.threads = match (strconv::stoi(val)) {
-            case let i: int => yield i;
-            case => yield 0;
-        };
-	case "SigQ" =>
-		let sig_parts = match(strings::split(val, "/")) {
-            case let s: []str => yield s;
-            case => return false;
-        };
-		if (len(sig_parts) == 2) {
-			status.sig_q_queued = match (strconv::stoz(sig_parts[0])) {
-                case let i: size => yield i;
-                case => yield 0;
-            };
-			status.sig_q_limit = match (strconv::stoz(sig_parts[1])) {
-                case let i: size => yield i;
-                case => yield 0;
-            };
-		};
-	case "SigPnd" =>
-		status.sig_pnd = match (strconv::stoz(val, 16)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "ShdPnd" =>
-		status.shd_pnd = match (strconv::stoz(val, 16)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "SigBlk" =>
-		status.sig_blk = match (strconv::stoz(val, 16)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "SigIgn" =>
-		status.sig_ign = match (strconv::stoz(val, 16)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "SigCgt" =>
-		status.sig_cgt = match (strconv::stoz(val, 16)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "CapInh" =>
-		status.cap_inh = match (strconv::stoz(val, 16)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "CapPrm" =>
-		status.cap_prm = match (strconv::stoz(val, 16)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "CapEff" =>
-		status.cap_eff = match (strconv::stoz(val, 16)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "CapBnd" =>
-		status.cap_bnd = match (strconv::stoz(val, 16)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "CapAmb" =>
-		status.cap_amb = match (strconv::stoz(val, 16)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "NoNewPrivs" =>
-		status.no_new_privs = match (strconv::stoi(val)) {
-            case let i: int => yield i;
-            case => yield 0;
-        };
-	case "Seccomp" =>
-		status.seccomp = strings::dup(val) as str;
-	case "Speculation_Store_Bypass" =>
-		status.speculation_store_bypass = strings::dup(val) as str;
-	case "Cpus_allowed" =>
-		status.cpus_allowed_mask = match (strconv::stoz(val, 16)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "Cpus_allowed_list" =>
-		status.cpus_allowed_list = strings::dup(val) as str;
-	case "Mems_allowed" =>
-		status.mems_allowed_mask = match (strconv::stoz(val, 16)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "Mems_allowed_list" =>
-		status.mems_allowed_list = strings::dup(val) as str;
-	case "voluntary_ctxt_switches" =>
-		status.voluntary_ctxt_switches = match (strconv::stoz(val, 16)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case "nonvoluntary_ctxt_switches" =>
-		status.nonvoluntary_ctxt_switches = match (strconv::stoz(val, 16)) {
-            case let i: size => yield i;
-            case => yield 0;
-        };
-	case =>
-		return true;
+	const size_str = match(strings::split(val, " ")) {
+		case let val: []str => yield val;
+		case => return pair_error;
 	};
+    const size_str = if(len(size_str) > 0) {
+        yield size_str[0];
+    } else {
+        yield "";
+    };
 
-	return true;
+	switch (key) {
+        case "Name" => status.name = strings::dup(val) as str;
+        case "Umask" => status.umask = strconv::stou(val, 8) as uint;
+        case "State" => status.state = if (len(val) > 0) strings::toutf8(val)[0] else 0;
+        case "Tgid" =>
+            status.tgid = match (strconv::stoi(val)) {
+                case let i: int => yield i;
+                case => return pair_error;
+            };
+        case "Ngid" =>
+            status.ngid = match (strconv::stoi(val)) {
+                case let i: int => yield i;
+                case => return pair_error;
+            };
+        case "Pid" =>
+            status.pid = match (strconv::stoi(val)) {
+                case let i: int => yield i;
+                case => return pair_error;
+            };
+        case "PPid" =>
+            status.ppid = match (strconv::stoi(val)) {
+                case let i: int => yield i;
+                case => return pair_error;
+            };
+        case "TracerPid" =>
+            status.tracer_pid = match (strconv::stoi(val)) {
+                case let i: int => yield i;
+                case => return pair_error;
+            };
+        case "Uid" =>
+            let uids = match(strings::split(val, " ")) {
+                case let s: []str => yield s;
+                case => return pair_error;
+            };
+            if (len(uids) >= 4) {
+                status.uid_real = strconv::stou(uids[0]) as uint;
+                status.uid_effective = strconv::stou(uids[1]) as uint;
+                status.uid_saved = strconv::stou(uids[2]) as uint;
+                status.uid_fs = strconv::stou(uids[3]) as uint;
+            };
+        case "Gid" =>
+            let gids = match(strings::split(val, " ")) {
+                case let s: []str => yield s;
+                case => return pair_error;
+            };
+            if (len(gids) >= 4) {
+                status.gid_real = strconv::stou(gids[0]) as uint;
+                status.gid_effective = strconv::stou(gids[1]) as uint;
+                status.gid_saved = strconv::stou(gids[2]) as uint;
+                status.gid_fs = strconv::stou(gids[3]) as uint;
+            };
+        case "FDSize" =>
+            status.fd_size = match(strconv::stoi(val)) {
+                case let i: int => yield i;
+                case => return pair_error;
+            };
+        case "Groups" =>
+            status.groups = match(parse_status_group_line(val)) {
+                case let groups: []uint => yield groups;
+                case => {
+                    const _p = fmt::println("Malformed status file(groups)");
+                    return pair_error;
+                };
+            };
+        case "VmPeak" =>
+            status.vm_peak = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "VmSize" =>
+            status.vm_size = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "VmLck" =>
+            status.vm_lck = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "VmPin" =>
+            status.vm_pin = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "VmHWM" =>
+            status.vm_hwm = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "VmRSS" =>
+            status.vm_rss = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "RssAnon" =>
+            status.rss_anon = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "RssFile" =>
+            status.rss_file = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "RssShmem" =>
+            status.rss_shmem = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "VmData" =>
+            status.vm_data = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "VmStk" =>
+            status.vm_stk = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "VmExe" =>
+            status.vm_exe = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "VmLib" =>
+            status.vm_lib = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "VmPTE" =>
+            status.vm_pte = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "VmSwap" =>
+            status.vm_swap = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "HugetlbPages" =>
+            status.hugetlb_pages = match (strconv::stoz(size_str)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "Threads" =>
+            status.threads = match (strconv::stoi(val)) {
+                case let i: int => yield i;
+                case => return pair_error;
+            };
+        case "SigQ" =>
+            let sig_parts = match(strings::split(val, "/")) {
+                case let s: []str => yield s;
+                case => return pair_error;
+            };
+            if (len(sig_parts) == 2) {
+                status.sig_q_queued = match (strconv::stoz(sig_parts[0])) {
+                    case let i: size => yield i;
+                    case => return pair_error;
+                };
+                status.sig_q_limit = match (strconv::stoz(sig_parts[1])) {
+                    case let i: size => yield i;
+                    case => return pair_error;
+                };
+            };
+        case "SigPnd" =>
+            status.sig_pnd = match (strconv::stoz(val, 16)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "ShdPnd" =>
+            status.shd_pnd = match (strconv::stoz(val, 16)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "SigBlk" =>
+            status.sig_blk = match (strconv::stoz(val, 16)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "SigIgn" =>
+            status.sig_ign = match (strconv::stoz(val, 16)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "SigCgt" =>
+            status.sig_cgt = match (strconv::stoz(val, 16)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "CapInh" =>
+            status.cap_inh = match (strconv::stoz(val, 16)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "CapPrm" =>
+            status.cap_prm = match (strconv::stoz(val, 16)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "CapEff" =>
+            status.cap_eff = match (strconv::stoz(val, 16)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "CapBnd" =>
+            status.cap_bnd = match (strconv::stoz(val, 16)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "CapAmb" =>
+            status.cap_amb = match (strconv::stoz(val, 16)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "NoNewPrivs" =>
+            status.no_new_privs = match (strconv::stoi(val)) {
+                case let i: int => yield i;
+                case => return pair_error;
+            };
+        case "Seccomp" => status.seccomp = strings::dup(val) as str;
+        case "Speculation_Store_Bypass" => status.speculation_store_bypass = strings::dup(val) as str;
+        case "Cpus_allowed" =>
+            status.cpus_allowed_mask = match (strconv::stoz(val, 16)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "Cpus_allowed_list" => status.cpus_allowed_list = strings::dup(val) as str;
+        case "Mems_allowed_list" =>
+            status.mems_allowed_list = strings::dup(val) as str;
+        case "voluntary_ctxt_switches" =>
+            status.voluntary_ctxt_switches = match (strconv::stoz(val, 16)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case "nonvoluntary_ctxt_switches" =>
+            status.nonvoluntary_ctxt_switches = match (strconv::stoz(val, 16)) {
+                case let i: size => yield i;
+                case => return pair_error;
+            };
+        case => return;
+	};
 };
 
 fn parse_status_file(pid: pid_t) (status_t | void) = {
@@ -439,9 +436,9 @@ fn parse_status_file(pid: pid_t) (status_t | void) = {
     };
 
     for(let pair .. status_src) {
-        const ok = parse_status_line(pair, &status);
-        if(!ok) {
-            const _p = fmt::println("Failed to parse line: ", pair);
+        match(parse_status_line(pair, &status)) {
+            case pair_error => const _p = fmt::println("Failed to parse line: ", pair);
+            case => continue;
         };
     };
 
