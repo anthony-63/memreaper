@@ -16,6 +16,8 @@ export fn main() void = {
 
     let proc = match(procfs::open(pid)) {
         case let p: procfs::process_t => yield p;
-        case => return;
+        case => fmt::fatalf("failed to open process at pid: {}", pid);
     };
+
+    
 };

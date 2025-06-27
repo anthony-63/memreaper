@@ -18,3 +18,13 @@ export type map_entry_t = struct {
     inode: u64,
     pathname: str,
 };
+
+type maps_erorr = !void;
+
+fn read_maps(pid: pid_t) ([]map_entry_t | maps_erorr) = {
+    let maps: []map_entry_t = [];
+    
+    
+
+    return maps;
+};
